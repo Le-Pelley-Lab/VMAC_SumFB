@@ -13,8 +13,9 @@ global awareInstrPause
 global starting_total_points
 global realVersion eyeVersion
 global omissionInformedVersion couldHaveWonVersion
+global maxPoints sumFBcondition
 
-gamma = 0.2;    % Controls smoothing of displayed gaze location. Lower values give more smoothing
+ gamma = 0.2;    % Controls smoothing of displayed gaze location. Lower values give more smoothing
 
 if realVersion
     
@@ -42,9 +43,10 @@ if realVersion
     pracTrials = 8;
     numExptBlocksPhase = [1, 8]; %Phase 1 = practice, Phase 2 = mixed single and double distractor, Phase 3 = double distractor only
     
-    blocksPerBreak = 2;
+    blocksPerBreak = 1;
     
-    singlePerBlock = [0, 12];
+    singlePerBlock = [0, 6];   % number of single distractor trials per block in each phase
+    absentPerBlock = [0, 2];    % number of distractor absent trials per block in each phase
     %doublePerBlock = [0, 4, 11];
     
 else
@@ -72,6 +74,7 @@ else
     blocksPerBreak = 1;
     
     singlePerBlock = [0, 1];
+    absentPerBlock = [0, 1];
     %doublePerBlock = [0, 1, 1];
 end
 
@@ -79,7 +82,7 @@ savingGazeData = false;
 
 if exptPhase == 1
     numTrials = pracTrials;
-    distractorType = 3;
+    distractorType = 4;
     exptTrialsPerBlock = pracTrials;
     trialTypeArray = ones(exptTrialsPerBlock, 1) * distractorType;
     winMultiplier = 0;
@@ -94,22 +97,21 @@ else
     numSingleDistractType = 2;
     %numDoubleDistractType = 2;
     
-    numTrialTypes = numSingleDistractType;
+    %numTrialTypes = numSingleDistractType;
     
     winMultiplier = zeros(2,1);     % winMultiplier is a bad name now; it's actually the amount that they win
-    winMultiplier(1) = bigMultiplier;         % High-val, omission distractors
-    winMultiplier(2) = smallMultiplier;     % Low val, omission distractors
-%     winMultiplier(3) = smallMultiplier;         % Low value, omission
-%     winMultiplier(4) = smallMultiplier;     % Low value, yoked
-%     winMultiplier(5) = 0;   %double distractor high val, no reward given
-%     winMultiplier(6) = 0;   %double distractor low val, no reward given
+    winMultiplier(1) = bigMultiplier;         % High-val distractor
+    winMultiplier(2) = smallMultiplier;     % Low val distractor
+    winMultiplier(3) = smallMultiplier;         % Distractor Absent
+
     
     numSingleDistractPerBlock = singlePerBlock(exptPhase);
+    numAbsentDistractPerBlock = absentPerBlock(exptPhase);
     %numDoubleDistractPerBlock = doublePerBlock(exptPhase);
     
     numExptBlocks = numExptBlocksPhase(exptPhase);
     
-    exptTrialsPerBlock = numSingleDistractType * numSingleDistractPerBlock;
+    exptTrialsPerBlock = numSingleDistractType * numSingleDistractPerBlock + numAbsentDistractPerBlock;
     
     trialTypeArray = zeros(exptTrialsPerBlock, 1);
     
@@ -121,12 +123,11 @@ else
         end
     end
     
-%     for ii = numSingleDistractType + 1 : numSingleDistractType + numDoubleDistractType
-%         for jj = 1 : numDoubleDistractPerBlock
-%             loopCounter = loopCounter + 1;
-%             trialTypeArray(loopCounter) = ii;
-%         end
-%     end
+    loopCounter = loopCounter + 1;
+    for jj = loopCounter : exptTrialsPerBlock
+        trialTypeArray(jj) = numSingleDistractType + 1;
+    end
+    
     
     numTrials = numExptBlocks * exptTrialsPerBlock;
     
@@ -135,6 +136,14 @@ end
 shTrialTypeArray = shuffleTrialorder(trialTypeArray, exptPhase);
 
 exptTrialsBeforeBreak = exptTrialsPerBlock * blocksPerBreak;
+
+if exptPhase > 1
+
+    maxPointsPerBlock = sum(numSingleDistractPerBlock * winMultiplier(1:numSingleDistractType)) + numAbsentDistractPerBlock * winMultiplier(numSingleDistractType + 1);
+
+    maxPoints = maxPointsPerBlock * sum(numExptBlocksPhase(2:end));
+    
+end
 
 if ~eyeVersion
     ShowCursor('Arrow');
@@ -203,6 +212,11 @@ block = 1;
 trials_since_break = 0;
 DATA.fixationTimeouts = [0, 0];
 DATA.trialTimeouts = [0, 0];
+pointsOmissionTrials = 0;
+pointsTimeoutTrials = 0;
+pointsInBlock = 0;
+omCounter = 0;
+toCounter = 0;
 
 % if exptPhase > 1
 %     omissionTracker = zeros(9,numSingleDistractPerBlock);
@@ -505,7 +519,7 @@ for trial = 1 : numTrials
             
             if timeOnLoc(distractLoc) > omissionTimeLimit          % If people have looked at the distractor location (includes trials with no distractor actually presented)
                  omissionTrial = 1;
-                 if omissionInformedVersion
+                 if omissionInformedVersion && ~sumFBcondition
                      if rt <= softTimeoutDuration % did this so that when people look at the distractor and its a soft timeout they don't get omission feedback
                         extraStr = [extraStr, '\n\nYou looked at the coloured circle!'];
                      end
@@ -517,14 +531,47 @@ for trial = 1 : numTrials
                 softTimeoutTrial = 1;
             end
             
-            if omissionTrial ~= 1 && softTimeoutTrial ~= 1      % If this trial is NOT an omission trial or a soft timeout then reward, otherwise pay zero
-                trialPay = winMultiplier(distractType);       % winMultiplier is a bad name now; it's actually the amount that they win
+            if omissionTrial == 1 || softTimeoutTrial == 1
+                
+                if omissionTrial == 1
+                    omCounter = omCounter + 1;
+                elseif softTimeoutTrial == 1
+                    toCounter = toCounter + 1;
+                end
+                
+                if ~sumFBcondition
+                    
+                    trialPay = 0;
+                    
+                    if couldHaveWonVersion && ~sumFBcondition
+                        extraStr = [extraStr, '\n\nYou could have won ', num2str(winMultiplier(distractType)), ' points'];
+                    end  
+                    
+                else
+                    
+                    trialPay = winMultiplier(distractType);
+                    
+                    if omissionTrial == 1
+                        pointsOmissionTrials = pointsOmissionTrials + trialPay;
+                    elseif softTimeoutTrial == 1
+                        pointsTimeoutTrials = pointsTimeoutTrials + trialPay;
+                    end
+                    
+                end
             else
-                trialPay = 0;
-                if couldHaveWonVersion
-                    extraStr = [extraStr, '\n\nYou could have won ', num2str(winMultiplier(distractType)), ' points'];
-                end     
+                
+                trialPay = winMultiplier(distractType);
+            
             end
+            
+%             if omissionTrial ~= 1 && softTimeoutTrial ~= 1      % If this trial is NOT an omission trial or a soft timeout then reward, otherwise pay zero
+%                 trialPay = winMultiplier(distractType);       % winMultiplier is a bad name now; it's actually the amount that they win
+%             else
+%                 trialPay = 0;
+%                 if couldHaveWonVersion && ~sumFBcondition
+%                     extraStr = [extraStr, '\n\nYou could have won ', num2str(winMultiplier(distractType)), ' points'];
+%                 end     
+%             end
             
             if trialPay == 1
                 centCents = 'point';
@@ -533,14 +580,20 @@ for trial = 1 : numTrials
             end
             
             sessionPay = sessionPay + trialPay;
+            pointsInBlock = pointsInBlock + trialPay;
+            
 
             fbStr = ['+', num2str(trialPay), ' ', centCents];
+
+            
             Screen('TextSize', MainWindow, 36);
             DrawFormattedText(MainWindow, [separatethousands(sessionPay+starting_total_points, ','), ' points total'], 'center', 760, white);
 
             
             if softTimeoutTrial == 1
-                fbStr = ['+', num2str(trialPay), ' ', centCents,'\n\nToo slow'];
+                if ~sumFBcondition
+                    fbStr = ['+', num2str(trialPay), ' ', centCents,'\n\nToo slow'];
+                end
             end
             
             fbStr = [fbStr, extraStr];
@@ -620,11 +673,14 @@ for trial = 1 : numTrials
         %Beeper;
     end
     
-    if (mod(trial, exptTrialsBeforeBreak) == 0 && trial ~= numTrials);
-        %             save(datafilename, 'DATA');
-        
-        take_a_break(breakDuration, initialPause, 0, sessionPay); %removed the additional calibrations that would occur throughout expt 14/01/16
+    if (mod(trial, exptTrialsBeforeBreak) == 0 && trial ~= numTrials);   
+        sessionPay = take_a_break(breakDuration, initialPause, 0, sessionPay, pointsOmissionTrials, omCounter, pointsTimeoutTrials, toCounter, pointsInBlock); %removed the additional calibrations that would occur throughout expt 14/01/16
         trials_since_break = 0;
+        pointsOmissionTrials = 0;
+        pointsTimeoutTrials = 0;
+        pointsInBlock = 0;
+        omCounter = 0;
+        toCounter = 0;
     end
     
 end
@@ -738,18 +794,46 @@ end
 
 
 
-function take_a_break(breakDur, pauseDur, runCalib, totalPointsSoFar)
+function [afterTotal] = take_a_break(breakDur, pauseDur, runCalib, totalPointsSoFar, omTotal, omCounter, toTotal, toCounter, pointsInBlock)
 
-global MainWindow white
+global MainWindow white sumFBcondition
+
+RestrictKeysForKbCheck(KbName('Space'));   % Only accept spacebar
+
+oldSize = Screen('TextSize', MainWindow, 32);
 
 if runCalib == 0
     
-    [~, ny, ~] = DrawFormattedText(MainWindow, ['Time for a break\n\nSit back, relax for a moment! You will be able to carry on in ', num2str(breakDur),' seconds\n\nRemember that you should be trying to move your eyes to the diamond as quickly and as accurately as possible!'], 'center', 'center', white, 50, [], [], 1.5);
-    
-    DrawFormattedText(MainWindow, ['Total so far = ', separatethousands(totalPointsSoFar, ','), ' points'], 'center', ny + 150, white, 50, [],[], 1.5);
+    [~, ny, ~] = DrawFormattedText(MainWindow, ['Time for a break\n\nSit back, relax for a moment! You will be able to carry on shortly\n\nRemember that you should be trying to move your eyes to the diamond as quickly and as accurately as possible! Press the spacebar to see feedback on your performance in the last block.'], 'center', 'center', white, 50, [], [], 1.5);
     
     Screen(MainWindow, 'Flip');
+    
+    
+    if sumFBcondition
+        afterTotal = totalPointsSoFar - omTotal - toTotal;
+        sumFBstr = ['In the last block you earned ', separatethousands(pointsInBlock, ','), ' points'...
+            '\n\nYou looked at the distractor ', num2str(omCounter), ' times, -', separatethousands(omTotal, ','), ' points'...
+            '\n\nYou were too slow ', num2str(toCounter), ' times, -', separatethousands(toTotal,','), ' points'...
+            '\n\nYour new total score = ', separatethousands(afterTotal, ','), ' points'];
+    else
+        afterTotal = totalPointsSoFar;
+        sumFBstr = ['In the last block you earned ', separatethousands(pointsInBlock, ','), ' points'...
+            '\n\nYour total score = ', separatethousands(totalPointsSoFar, ','), ' points'];
+    end
+    
+    sumFBstr = [sumFBstr, '\n\nYou will be able to continue in ', num2str(breakDur), ' seconds'];
+    
+    [~, ny, ~] = DrawFormattedText(MainWindow, sumFBstr, 'centerblock', 'center', white, [], [],[], 1.5);
+    
+    KbWait([], 2);
+    
+    Screen(MainWindow, 'Flip', [], 1);
+    DrawFormattedText(MainWindow, '\n\nPlease put your chin back in the chinrest,\nand press the spacebar when you are ready to continue', 'center', ny, white, [], [], [], 1.5);
     WaitSecs(breakDur);
+    Screen(MainWindow, 'Flip');
+    
+    
+    
     
 else
     
@@ -762,10 +846,7 @@ else
     
 end
 
-RestrictKeysForKbCheck(KbName('Space'));   % Only accept spacebar
-
-DrawFormattedText(MainWindow, 'Please put your chin back in the chinrest,\nand press the spacebar when you are ready to continue', 'center', 'center' , white, [], [], [], 1.5);
-Screen(MainWindow, 'Flip');
+Screen('TextSize', MainWindow, oldSize);
 
 KbWait([], 2);
 Screen(MainWindow, 'Flip');
