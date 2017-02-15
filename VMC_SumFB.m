@@ -1,9 +1,13 @@
 
-clear all
+clearvars
+
+clearvars -GLOBAL
 
 Screen('Preference', 'VisualDebuglevel', 3);    % Hides the hammertime PTB startup screen
 
-PsychDebugWindowConfiguration()
+PsychDebugWindowConfiguration(0,0.5)
+
+commandwindow;
 
 Screen('CloseAll');
 
@@ -35,8 +39,8 @@ global sumFBcondition
 eyeVersion = false; % set to true to run eyetracker, otherwise uses mouse position
 realVersion = true; % set to true for correct numbers of trials etc.
 laptopVersion = false; % set to true to scale stimuli for laptop screen dimensions
-contingencyInformedVersion = true; % set to true to inform participants about the colour-reward contingencies
-omissionInformedVersion = false; % set to true to inform participants about the omission contingency at start + trial by trial
+contingencyInformedVersion = false; % set to true to inform participants about the colour-reward contingencies
+omissionInformedVersion = true; % set to true to inform participants about the omission contingency at start + trial by trial
 couldHaveWonVersion = true; % set to true to tell participants what they could have won on omission/timeout trials.
 maxDollaridoos = 17.5;    %this is the maximum amount that someone can win with perfect performance (in dollars)
 minDollaridoos = 7.1;   %this is the minimum amount that someone can win with perfect performance (in dollars)

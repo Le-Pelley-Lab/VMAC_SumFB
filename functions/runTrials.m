@@ -13,7 +13,7 @@ global awareInstrPause
 global starting_total_points
 global realVersion eyeVersion
 global omissionInformedVersion couldHaveWonVersion
-global maxPoints sumFBcondition
+global maxPoints sumFBcondition prevBlockTotal
 
  gamma = 0.2;    % Controls smoothing of displayed gaze location. Lower values give more smoothing
 
@@ -217,6 +217,7 @@ pointsTimeoutTrials = 0;
 pointsInBlock = 0;
 omCounter = 0;
 toCounter = 0;
+prevBlockTotal = 0;
 
 % if exptPhase > 1
 %     omissionTracker = zeros(9,numSingleDistractPerBlock);
@@ -552,9 +553,9 @@ for trial = 1 : numTrials
                     trialPay = winMultiplier(distractType);
                     
                     if omissionTrial == 1
-                        pointsOmissionTrials = pointsOmissionTrials + trialPay;
+                        pointsOmissionTrials = pointsOmissionTrials - trialPay;
                     elseif softTimeoutTrial == 1
-                        pointsTimeoutTrials = pointsTimeoutTrials + trialPay;
+                        pointsTimeoutTrials = pointsTimeoutTrials - trialPay;
                     end
                     
                 end
@@ -674,7 +675,7 @@ for trial = 1 : numTrials
     end
     
     if (mod(trial, exptTrialsBeforeBreak) == 0 && trial ~= numTrials);   
-        sessionPay = take_a_break(breakDuration, initialPause, 0, sessionPay, pointsOmissionTrials, omCounter, pointsTimeoutTrials, toCounter, pointsInBlock); %removed the additional calibrations that would occur throughout expt 14/01/16
+        sessionPay = take_a_break(breakDuration, initialPause, 0, sessionPay, pointsOmissionTrials, omCounter, pointsTimeoutTrials, toCounter, pointsInBlock, block); %removed the additional calibrations that would occur throughout expt 14/01/16
         trials_since_break = 0;
         pointsOmissionTrials = 0;
         pointsTimeoutTrials = 0;
@@ -794,13 +795,17 @@ end
 
 
 
-function [afterTotal] = take_a_break(breakDur, pauseDur, runCalib, totalPointsSoFar, omTotal, omCounter, toTotal, toCounter, pointsInBlock)
+function [afterTotal] = take_a_break(breakDur, pauseDur, runCalib, totalPointsSoFar, omTotal, omCounter, toTotal, toCounter, pointsInBlock, block)
 
-global MainWindow white sumFBcondition
+global MainWindow white sumFBcondition black prevBlockTotal
 
 RestrictKeysForKbCheck(KbName('Space'));   % Only accept spacebar
 
+breakTextWindow = Screen('OpenOffscreenWindow', MainWindow, black);
+
 oldSize = Screen('TextSize', MainWindow, 32);
+Screen('TextSize', breakTextWindow, 32);
+Screen('TextStyle', breakTextWindow, 1);
 
 if runCalib == 0
     
@@ -808,27 +813,70 @@ if runCalib == 0
     
     Screen(MainWindow, 'Flip');
     
+    if block-1 > 1
+        extraStr = '\nPrevious total = ';
+        extraVal = ['\n', separatethousands(prevBlockTotal, ',')];
+    else
+        extraStr = [];
+        extraVal = [];
+    end
+    
+   
+    
     
     if sumFBcondition
-        afterTotal = totalPointsSoFar - omTotal - toTotal;
-        sumFBstr = ['In the last block you earned ', separatethousands(pointsInBlock, ','), ' points'...
-            '\n\nYou looked at the distractor ', num2str(omCounter), ' times, -', separatethousands(omTotal, ','), ' points'...
-            '\n\nYou were too slow ', num2str(toCounter), ' times, -', separatethousands(toTotal,','), ' points'...
-            '\n\nYour new total score = ', separatethousands(afterTotal, ','), ' points'];
+        afterTotal = totalPointsSoFar + omTotal + toTotal; %this actually subtracts these values, because they are recorded as -ves
+        combinedVals = [totalPointsSoFar, omTotal, toTotal, afterTotal, prevBlockTotal];
+        sumFBunderline = char(ones(1,ceil(log10(max(combinedVals))))*95); % this makes a string of underscores the same size as the largest number
+        
+%         sumFBstr = ['In the last block you earned ', separatethousands(pointsInBlock, ','), ' points'...
+%             '\n\nYou looked at the distractor ', num2str(omCounter), ' times, -', separatethousands(omTotal, ','), ' points'...
+%             '\n\nYou were too slow ', num2str(toCounter), ' times, -', separatethousands(toTotal,','), ' points'...
+%             '\n\nYour new total score = ', separatethousands(afterTotal, ','), ' points'];
+
+        sumFBstr = ['In the last block you earned = \nYou looked at the distractor ',  num2str(omCounter), ' times = ',...
+            '\nYou were too slow ', num2str(toCounter), ' times = ', extraStr, '\n\nYour new total score = '];
+        
+        sumFBvals = [separatethousands(pointsInBlock, ','), '\n',...
+            separatethousands(omTotal, ','), '\n',...
+            separatethousands(toTotal,','), extraVal, ...
+            '\n', sumFBunderline, '\n', separatethousands(afterTotal, ',')];
     else
         afterTotal = totalPointsSoFar;
-        sumFBstr = ['In the last block you earned ', separatethousands(pointsInBlock, ','), ' points'...
-            '\n\nYour total score = ', separatethousands(totalPointsSoFar, ','), ' points'];
+        combinedVals = [totalPointsSoFar, omTotal, toTotal, afterTotal, prevBlockTotal];
+        sumFBunderline = char(ones(1,ceil(log10(max(combinedVals))))*95); % this makes a string of underscores the same size as the largest number
+        
+        sumFBstr = ['In the last block you earned = ', extraStr...
+            '\n\nYour total score = '];
+        sumFBvals = [separatethousands(pointsInBlock, ','), extraVal ...
+            '\n', sumFBunderline, '\n', separatethousands(afterTotal, ',')];
     end
     
     sumFBstr = [sumFBstr, '\n\nYou will be able to continue in ', num2str(breakDur), ' seconds'];
     
-    [~, ny, ~] = DrawFormattedText(MainWindow, sumFBstr, 'centerblock', 'center', white, [], [],[], 1.5);
+    [~, ~, sumFBstrBox] = DrawFormattedText(breakTextWindow, sumFBstr, 'right', 250, white, [], [],[], 1.5, [], [0 0 1920/2 1080]);
+    sumFBstrBox(2) = sumFBstrBox(2)-10; %stops top of box being cut off
+    sumFBstrWidth = sumFBstrBox(3) - sumFBstrBox(1);
+    sumFBstrHeight = sumFBstrBox(4) - sumFBstrBox(2);
+    
+    [~, ~, sumFBvalsBox] = DrawFormattedText(breakTextWindow, sumFBvals, 'right', 250, white, [], [], [], 1.5, [], [1920/2 0 1920-200, 1080]);
+    sumFBvalsBox(2) = sumFBvalsBox(2)-10;
+    sumFBvalsWidth = sumFBvalsBox(3) - sumFBvalsBox(1);
+    sumFBvalsHeight = sumFBvalsBox(4) - sumFBvalsBox(2);
+    
+    destWidth = sumFBstrWidth + sumFBvalsWidth;
+    destStart = 1920/2-destWidth/2;
+    destEnd = 1920/2+destWidth/2;
+    destSumFBstrRect = [destStart, 250, destStart + sumFBstrWidth, 250+sumFBstrHeight];
+    destSumFBvalsRect = [destStart + sumFBstrWidth, 250, destEnd, 250+sumFBvalsHeight];
+    
+    Screen('DrawTexture', MainWindow, breakTextWindow, sumFBstrBox, destSumFBstrRect);
+    Screen('DrawTexture', MainWindow, breakTextWindow, sumFBvalsBox, destSumFBvalsRect);    
     
     KbWait([], 2);
     
     Screen(MainWindow, 'Flip', [], 1);
-    DrawFormattedText(MainWindow, '\n\nPlease put your chin back in the chinrest,\nand press the spacebar when you are ready to continue', 'center', ny, white, [], [], [], 1.5);
+    DrawFormattedText(MainWindow, '\n\n\n\nPlease put your chin back in the chinrest,\nand press the spacebar when you are ready to continue', 'center', 'center', white, [], [], [], 1.5, [], [0 destSumFBstrRect(4) 1920 1080]);
     WaitSecs(breakDur);
     Screen(MainWindow, 'Flip');
     
@@ -852,6 +900,8 @@ KbWait([], 2);
 Screen(MainWindow, 'Flip');
 
 WaitSecs(pauseDur);
+
+prevBlockTotal = afterTotal;
 
 end
 
