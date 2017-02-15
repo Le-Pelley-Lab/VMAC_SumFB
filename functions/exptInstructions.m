@@ -5,7 +5,13 @@ global MainWindow white
 global bigMultiplier smallMultiplier
 global centOrCents
 global softTimeoutDuration
-global trialCounter contingencyInformedVersion  omissionInformedVersion
+global trialCounter contingencyInformedVersion  omissionInformedVersion summaryFBversion
+
+if summaryFBversion
+    sumFBstr = 'your reward for the trial will be taken away from your total at the end of the current block of trials.';
+else
+    sumFBstr = 'you will receive no reward for the trial.';
+end
 
 
 if contingencyInformedVersion
@@ -15,10 +21,12 @@ else
 end
 
 if omissionInformedVersion
-    omissionStr = '\n\nIf you accidentally look at the coloured circle before you look at the diamond, you will receive no reward. So you should try to move your eyes straight to the diamond.';
+    omissionStr = ['\n\nIf you accidentally look at the coloured circle before you look at the diamond, ', sumFBstr, ' So you should try to move your eyes straight to the diamond.'];
 else
     omissionStr = '';
 end
+
+
 
 instructStr = {'The rest of this experiment is similar to the trials you have just completed. On each trial, you should move your eyes to the DIAMOND shape as quickly and directly as possible.', ...
     ['From now on, you will be able to earn points for correct responses. On each trial you will earn either 0 points, ', num2str(smallMultiplier), ' ', centOrCents, ', or ', num2str(bigMultiplier), ...

@@ -555,7 +555,9 @@ for trial = 1 : numTrials
                     if omissionTrial == 1
                         pointsOmissionTrials = pointsOmissionTrials - trialPay;
                     elseif softTimeoutTrial == 1
-                        pointsTimeoutTrials = pointsTimeoutTrials - trialPay;
+                        extraStr = [extraStr, '\n\nYou could have won ', num2str(winMultiplier(distractType)), ' points'];
+                        trialPay = 0;
+                        %pointsTimeoutTrials = pointsTimeoutTrials - trialPay;
                     end
                     
                 end
@@ -591,10 +593,8 @@ for trial = 1 : numTrials
             DrawFormattedText(MainWindow, [separatethousands(sessionPay+starting_total_points, ','), ' points total'], 'center', 760, white);
 
             
-            if softTimeoutTrial == 1
-                if ~sumFBcondition
+            if softTimeoutTrial == 1 && omissionTrial ~= 1 %omission trials cannot be considered soft timeouts
                     fbStr = ['+', num2str(trialPay), ' ', centCents,'\n\nToo slow'];
-                end
             end
             
             fbStr = [fbStr, extraStr];
@@ -835,11 +835,10 @@ if runCalib == 0
 %             '\n\nYour new total score = ', separatethousands(afterTotal, ','), ' points'];
 
         sumFBstr = ['In the last block you earned = \nYou looked at the distractor ',  num2str(omCounter), ' times = ',...
-            '\nYou were too slow ', num2str(toCounter), ' times = ', extraStr, '\n\nYour new total score = '];
+            extraStr, '\n\nYour new total score = '];
         
         sumFBvals = [separatethousands(pointsInBlock, ','), '\n',...
-            separatethousands(omTotal, ','), '\n',...
-            separatethousands(toTotal,','), extraVal, ...
+            separatethousands(omTotal, ','), extraVal, ...
             '\n', sumFBunderline, '\n', separatethousands(afterTotal, ',')];
     else
         afterTotal = totalPointsSoFar;
