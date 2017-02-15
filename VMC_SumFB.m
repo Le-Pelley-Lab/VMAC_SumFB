@@ -3,6 +3,8 @@ clear all
 
 Screen('Preference', 'VisualDebuglevel', 3);    % Hides the hammertime PTB startup screen
 
+PsychDebugWindowConfiguration()
+
 Screen('CloseAll');
 
 clc;
@@ -28,18 +30,22 @@ global contingencyInformedVersion
 global omissionInformedVersion
 global couldHaveWonVersion
 global laptopVersion viewDistance monitorDims
+global sumFBcondition
 
 eyeVersion = false; % set to true to run eyetracker, otherwise uses mouse position
 realVersion = true; % set to true for correct numbers of trials etc.
 laptopVersion = false; % set to true to scale stimuli for laptop screen dimensions
 contingencyInformedVersion = true; % set to true to inform participants about the colour-reward contingencies
-omissionInformedVersion = true; % set to true to inform participants about the omission contingency at start + trial by trial
-couldHaveWonVersion = false; % set to true to tell participants what they could have won on omission/timeout trials.
+omissionInformedVersion = false; % set to true to inform participants about the omission contingency at start + trial by trial
+couldHaveWonVersion = true; % set to true to tell participants what they could have won on omission/timeout trials.
+maxDollaridoos = 17.5;    %this is the maximum amount that someone can win with perfect performance (in dollars)
+minDollaridoos = 7.1;   %this is the minimum amount that someone can win with perfect performance (in dollars)
 
 commandwindow;
 
 if realVersion
-    screenNum = max('Screens');
+    screens = Screen('Screens');
+    screenNum = max(screens);
     Screen('Preference', 'SkipSyncTests', 0); % Enables PTB calibration
     awareInstrPause = 12;
 else
@@ -171,6 +177,16 @@ else
     
 end
 
+if colBalance == 3 || colBalance == 4
+
+    sumFBcondition = true;
+
+else
+    
+    sumFBcondition = false;
+
+end
+
 datafilename = [datafilename, '.mat'];
 
 starting_total_points = 0;
@@ -187,6 +203,7 @@ DATA.age = p_age;
 DATA.sex = p_sex;
 DATA.genderInfo = p_genderInfo;
 DATA.hand = p_hand;
+DATA.sumFBcondition = sumFBcondition;
 %DATA.group = p_group;
 DATA.start_time = datestr(now,0);
 if eyeVersion
@@ -240,17 +257,19 @@ pink = [193 87 135];
 yellow = [255 255 0];
 Screen('FillRect',MainWindow, black);
 
-distract_col = zeros(3,3);
+distract_col = zeros(4,3);
 
-distract_col(3,:) = yellow;       % Practice colour
+distract_col(4,:) = yellow;       % Practice colour
 switch colBalance
-    case 1
+    case {1, 3}
         distract_col(1,:) = orange;      % High-value distractor colour, second colour is the irrelevant distractor
         distract_col(2,:) = blue;      % Low-value distractor colour, second colour is the irrelevant distract
+        distract_col(3,:) = gray;
         colourName = char('ORANGE','BLUE');
-    case 2
+    case {2, 4}
         distract_col(1,:) = blue;      % High-value distractor colour, second colour is the irrelevant distractor
         distract_col(2,:) = orange;      % Low-value distractor colour, second colour is the irrelevant distractor
+        distract_col(3,:) = gray;
         colourName = char('BLUE','ORANGE');
 end
 
@@ -301,29 +320,25 @@ phaseLength(2) = runTrials(2);
 awareInstructions;
 awareTest;
 
-%sessionBonus = sessionPoints / 160;   % convert points into cents at rate of 13 000 points = $1. Updated 13/5.
+pointsDenominator = findPointsDenominator(maxDollaridoos);
 
-%sessionBonus = 10 * ceil(sessionBonus/10);        % ... round this value UP to nearest 10 cents
-%sessionBonus = sessionBonus / 100;    % ... then convert back to dollars
+sessionBonus = sessionPoints / pointsDenominator;   % convert points into cents at rate of 13 000 points = $1. Updated 13/5.
 
-%DATA.session_Bonus = sessionBonus;
+sessionBonus = 10 * ceil(sessionBonus/10);        % ... round this value UP to nearest 10 cents
+sessionBonus = sessionBonus / 100;    % ... then convert back to dollars
+
+if sessionBonus < minDollaridoos
+    sessionBonus = minDollaridoos;
+end
+
+DATA.session_Bonus = sessionBonus;
 DATA.session_Points = sessionPoints;
 
-%totalBonus = starting_total + sessionBonus;
-
-% if totalBonus < 7.10        %check to see if participant earned less than $10.10; if so, adjust payment upwards
-%     actual_bonus_payment = 7.10;
-% else
-%     actual_bonus_payment = totalBonus;
-% end
-% 
-% DATA.totalBonus = totalBonus;
-% DATA.actualTotalBonus = actual_bonus_payment;
 DATA.end_time = datestr(now,0);
 
 save(datafilename, 'DATA');
 
-[~, ny, ~] = DrawFormattedText(MainWindow, ['SESSION COMPLETE\n\nPoints in this session = ', separatethousands(sessionPoints, ',')], 'center', 'center' , white, [], [], [], 1.4);
+[~, ny, ~] = DrawFormattedText(MainWindow, ['SESSION COMPLETE\n\nPoints in this session = ', separatethousands(sessionPoints, ','), '\n\nTotal Bonus = ', num2str(sessionBonus, '%0.2f')], 'center', 'center' , white, [], [], [], 1.4);
 
 fid1 = fopen('BehavData\_TotalBonus_summary.csv', 'a');
 fprintf(fid1,'%d,%f\n', p_number, sessionPoints);
