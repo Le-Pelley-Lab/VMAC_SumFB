@@ -593,7 +593,7 @@ for trial = 1 : numTrials
             DrawFormattedText(MainWindow, [separatethousands(sessionPay+starting_total_points, ','), ' points total'], 'center', 760, white);
 
             
-            if softTimeoutTrial == 1 && omissionTrial ~= 1 %omission trials cannot be considered soft timeouts
+            if softTimeoutTrial == 1 && omissionTrial ~= 1 %omission trials cannot be considered soft timeouts 
                     fbStr = ['+', num2str(trialPay), ' ', centCents,'\n\nToo slow'];
             end
             
