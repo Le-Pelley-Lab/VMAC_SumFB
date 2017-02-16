@@ -5,12 +5,16 @@ global MainWindow white
 global bigMultiplier smallMultiplier
 global centOrCents
 global softTimeoutDuration
-global trialCounter contingencyInformedVersion  omissionInformedVersion summaryFBversion
+global trialCounter contingencyInformedVersion  omissionInformedVersion sumFBcondition
 
-if summaryFBversion
-    sumFBstr = 'your reward for the trial will be taken away from your total at the end of the current block of trials.';
+sumFBstr = 'At the end of each block of trials, you will be able to take a break and you will be given feedback on your performance.';
+
+
+if sumFBcondition
+    
+    sumFBstr2 = 'your reward for the trial will be taken away from your total at the end of the current block.';
 else
-    sumFBstr = 'you will receive no reward for the trial.';
+    sumFBstr2 = 'you will receive no reward for the trial.';
 end
 
 
@@ -21,7 +25,7 @@ else
 end
 
 if omissionInformedVersion
-    omissionStr = ['\n\nIf you accidentally look at the coloured circle before you look at the diamond, ', sumFBstr, ' So you should try to move your eyes straight to the diamond.'];
+    omissionStr = ['\n\nIf you accidentally look at the coloured circle before you look at the diamond, ', sumFBstr2, ' So you should try to move your eyes straight to the diamond.'];
 else
     omissionStr = '';
 end
@@ -31,7 +35,7 @@ end
 instructStr = {'The rest of this experiment is similar to the trials you have just completed. On each trial, you should move your eyes to the DIAMOND shape as quickly and directly as possible.', ...
     ['From now on, you will be able to earn points for correct responses. On each trial you will earn either 0 points, ', num2str(smallMultiplier), ' ', centOrCents, ', or ', num2str(bigMultiplier), ...
     ' points. These points will be converted into a cash reward at the end of the experiment.', contingencyStr], ...
-    ['If you take longer than ', num2str(round(softTimeoutDuration * 1000)), ' milliseconds to move your eyes to the diamond, you will receive no points. So you will need to move your eyes quickly!', omissionStr], ...
+    [sumFBstr '\n\nIf you take longer than ', num2str(round(softTimeoutDuration * 1000)), ' milliseconds to move your eyes to the diamond, you will receive no points. So you will need to move your eyes quickly!', omissionStr], ...
     'After each trial you will be told how many points you won, and your total points earned so far in this session.'};
 
 

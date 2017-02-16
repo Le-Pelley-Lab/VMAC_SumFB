@@ -5,7 +5,7 @@ clearvars -GLOBAL
 
 Screen('Preference', 'VisualDebuglevel', 3);    % Hides the hammertime PTB startup screen
 
-PsychDebugWindowConfiguration(0,0.5)
+%PsychDebugWindowConfiguration(0,0.5)
 
 commandwindow;
 
@@ -34,9 +34,9 @@ global contingencyInformedVersion
 global omissionInformedVersion
 global couldHaveWonVersion
 global laptopVersion viewDistance monitorDims
-global sumFBcondition
+global sumFBcondition EGdataFilenameBase
 
-eyeVersion = false; % set to true to run eyetracker, otherwise uses mouse position
+eyeVersion = true; % set to true to run eyetracker, otherwise uses mouse position
 realVersion = true; % set to true for correct numbers of trials etc.
 laptopVersion = false; % set to true to scale stimuli for laptop screen dimensions
 contingencyInformedVersion = false; % set to true to inform participants about the colour-reward contingencies
@@ -113,15 +113,15 @@ if eyeVersion
     fprintf('Connected!  Sample rate: %d Hz.\n', currentFrameRate);
 end
 
-if exist('BehavData', 'dir') == 0
-    mkdir('BehavData');
+if exist('Data\BehavData', 'dir') == 0
+    mkdir('Data\BehavData');
 end
-if exist('CalibrationData', 'dir') == 0
-    mkdir('CalibrationData');
-end
-if exist('EyeData', 'dir') == 0
-    mkdir('EyeData');
-end
+% if exist('CalibrationData', 'dir') == 0
+%     mkdir('CalibrationData');
+% end
+% if exist('EyeData', 'dir') == 0
+%     mkdir('EyeData');
+% end
 
 if realVersion
     
@@ -132,7 +132,7 @@ if realVersion
         
         p_number = input('Participant number  ---> ');       
         
-        datafilename = ['BehavData\VMC_Westmead_dataP', num2str(p_number)];
+        datafilename = ['Data\BehavData\VMC_SumFB_dataP', num2str(p_number)];
         
         
         if exist([datafilename, '.mat'], 'file') == 2
@@ -225,7 +225,7 @@ if eyeVersion
         mkdir(EGfolderName);
     end        
     mkdir(EGfolderName, EGsubfolderNameString);
-    EGdataFilenameBase = [EGfolderName, '\', EGsubfolderNameString, '\GazeData', EGsubfolderNameString];
+    EGdataFilenameBase = [EGfolderName, '\', EGsubfolderNameString];
 end
 
 % *******************************************************
@@ -284,12 +284,12 @@ sessionPoints = 0;
 initialInstructions;
 
 if eyeVersion
-    runCalibration;
+    runPTBcalibration;
 end
 
 pressSpaceToBegin;
 
-phaseLength(1) = runTrials(1);     % Practice phase
+[phaseLength(1), ~] = runTrials(1);     % Practice phase
 
 save(datafilename, 'DATA');
 
@@ -318,7 +318,7 @@ end
 
 pressSpaceToBegin;
 
-phaseLength(2) = runTrials(2);
+[phaseLength(2), sessionPoints] = runTrials(2);
 %phaseLength(3) = runTrials(3);
 
 awareInstructions;
@@ -353,7 +353,7 @@ DrawFormattedText(MainWindow, '\n\nPlease fetch the experimenter', 'center', ny 
 Screen(MainWindow, 'Flip');
 
 if eyeVersion
-    overallEGdataFilename = [EGfolderName, '\', EGgroupfolderNameString, '\GazeData', EGsubfolderNameString, '.mat'];
+    overallEGdataFilename = [EGfolderName, EGsubfolderNameString, '.mat'];
     
     minPhase = 2;
     maxPhase = 2;
@@ -361,15 +361,18 @@ if eyeVersion
     for exptPhase = minPhase:maxPhase
         
         for trial = 1:phaseLength(exptPhase)
-            inputFilename = [EGdataFilenameBase, 'Ph', num2str(exptPhase), 'T', num2str(trial), '.mat'];
+            inputFilename = [EGdataFilenameBase, '\Ph', num2str(exptPhase), 'T', num2str(trial), '.mat'];
             load(inputFilename);
+            inputFixFilename = [EGdataFilenameBase, '\Ph', num2str(exptPhase), 'T', num2str(trial), '_FIX.mat'];
+            load(inputFixFilename);
             ALLGAZEDATA.EGdataPhase(exptPhase).EGdataTrial(trial).data = GAZEDATA;
+            ALLGAZEDATA.EGdataPhase(exptPhase).EGdataFix(trial).data = FIXDATA;
             clear GAZEDATA;
         end
     end
     
     save(overallEGdataFilename, 'ALLGAZEDATA');
-    rmdir([EGfolderName,'\', EGgroupfolderNameString, EGsubfolderNameString], 's');
+    rmdir(EGdataFilenameBase, 's');
 end
 
 RestrictKeysForKbCheck(KbName('q'));   % Only accept Q key to quit

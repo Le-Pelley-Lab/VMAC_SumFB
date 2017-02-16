@@ -1,5 +1,5 @@
 
-function sessionPay = runTrials(exptPhase)
+function [trial, sessionPay] = runTrials(exptPhase)
 
 global MainWindow
 global scr_centre DATA datafilename
@@ -13,7 +13,7 @@ global awareInstrPause
 global starting_total_points
 global realVersion eyeVersion
 global omissionInformedVersion couldHaveWonVersion
-global maxPoints sumFBcondition prevBlockTotal
+global maxPoints sumFBcondition prevBlockTotal softTimeoutDuration EGdataFilenameBase
 
  gamma = 0.2;    % Controls smoothing of displayed gaze location. Lower values give more smoothing
 
@@ -41,12 +41,12 @@ if realVersion
     fixationFixationTime = 0.7;       % Time that fixation cross must be fixated for trial to begin
     
     pracTrials = 8;
-    numExptBlocksPhase = [1, 8]; %Phase 1 = practice, Phase 2 = mixed single and double distractor, Phase 3 = double distractor only
+    numExptBlocksPhase = [1, 1]; %Phase 1 = practice, Phase 2 = mixed single and double distractor, Phase 3 = double distractor only
     
     blocksPerBreak = 1;
     
     singlePerBlock = [0, 6];   % number of single distractor trials per block in each phase
-    absentPerBlock = [0, 2];    % number of distractor absent trials per block in each phase
+    absentPerBlock = [0, 0];    % number of distractor absent trials per block in each phase
     %doublePerBlock = [0, 4, 11];
     
 else
@@ -298,7 +298,7 @@ for trial = 1 : numTrials
     fixationTimeout = 0;
     gazeCycle = 0;
     arrayRowCounter = 2;    % Used to write EG data to the correct rows of an array. Starts at 2 because we write the first row in separately below (line marked ***)
-    
+    fixArrayRowCounter = 2;
     startFixationTime = Screen(MainWindow, 'Flip', [], 1);     % Present fixation cross
     
     if savingGazeData
@@ -630,8 +630,8 @@ for trial = 1 : numTrials
     save(datafilename, 'DATA');
     
     if savingGazeData
-        EGdatafilename = [EGdataFilenameBase, 'Ph', num2str(exptPhase), 'T', num2str(trial), '.mat'];
-        FIXdatafilename = [EGdataFilenameBase, 'Ph', num2str(exptPhase), 'T', num2str(trial), '_FIX.mat'];
+        EGdatafilename = [EGdataFilenameBase, '\Ph', num2str(exptPhase), 'T', num2str(trial), '.mat'];
+        FIXdatafilename = [EGdataFilenameBase, '\Ph', num2str(exptPhase), 'T', num2str(trial), '_FIX.mat'];
         FIXDATA = fixEGarray(1:fixArrayRowCounter-1,:);
         GAZEDATA = trialEGarray(1:arrayRowCounter-1,:);
         save(EGdatafilename, 'GAZEDATA');
@@ -674,7 +674,7 @@ for trial = 1 : numTrials
         %Beeper;
     end
     
-    if (mod(trial, exptTrialsBeforeBreak) == 0 && trial ~= numTrials);   
+    if (mod(trial, exptTrialsBeforeBreak) == 0 && exptPhase > 1);   
         sessionPay = take_a_break(breakDuration, initialPause, 0, sessionPay, pointsOmissionTrials, omCounter, pointsTimeoutTrials, toCounter, pointsInBlock, block); %removed the additional calibrations that would occur throughout expt 14/01/16
         trials_since_break = 0;
         pointsOmissionTrials = 0;
@@ -809,7 +809,7 @@ Screen('TextStyle', breakTextWindow, 1);
 
 if runCalib == 0
     
-    [~, ny, ~] = DrawFormattedText(MainWindow, ['Time for a break\n\nSit back, relax for a moment! You will be able to carry on shortly\n\nRemember that you should be trying to move your eyes to the diamond as quickly and as accurately as possible! Press the spacebar to see feedback on your performance in the last block.'], 'center', 'center', white, 50, [], [], 1.5);
+    [~, ny, ~] = DrawFormattedText(MainWindow, ['Time for a break\n\nSit back, relax for a moment! You will be able to carry on shortly\n\nRemember that you should be trying to move your eyes to the diamond as quickly and as accurately as possible!\n\nPress the spacebar to see feedback on your performance in the last block.'], 'center', 'center', white, 50, [], [], 1.5);
     
     Screen(MainWindow, 'Flip');
     
@@ -834,7 +834,7 @@ if runCalib == 0
 %             '\n\nYou were too slow ', num2str(toCounter), ' times, -', separatethousands(toTotal,','), ' points'...
 %             '\n\nYour new total score = ', separatethousands(afterTotal, ','), ' points'];
 
-        sumFBstr = ['In the last block you earned = \nYou looked at the distractor ',  num2str(omCounter), ' times = ',...
+        sumFBstr = ['In the last block you earned = \nYou looked at the coloured circle ',  num2str(omCounter), ' times = ',...
             extraStr, '\n\nYour new total score = '];
         
         sumFBvals = [separatethousands(pointsInBlock, ','), '\n',...
