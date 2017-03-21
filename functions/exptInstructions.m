@@ -12,7 +12,7 @@ sumFBstr = 'At the end of each block of trials, you will be able to take a break
 
 if sumFBcondition
     
-    sumFBstr2 = 'your reward for the trial will be taken away from your total at the end of the current block.';
+    sumFBstr2 = 'your reward for the trial will be taken away from your total at the end of the block.';
 else
     sumFBstr2 = 'you will receive no reward for the trial.';
 end

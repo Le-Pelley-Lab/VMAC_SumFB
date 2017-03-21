@@ -41,12 +41,12 @@ if realVersion
     fixationFixationTime = 0.7;       % Time that fixation cross must be fixated for trial to begin
     
     pracTrials = 8;
-    numExptBlocksPhase = [1, 1]; %Phase 1 = practice, Phase 2 = mixed single and double distractor, Phase 3 = double distractor only
+    numExptBlocksPhase = [1, 18]; %Phase 1 = practice, Phase 2 = main task. 18 Blocks = 432 trials total (216 per distractor type [no absent trials])
     
-    blocksPerBreak = 1;
+    blocksPerBreak = 2; % Breaks occur every 48 trials, more frequent (than yoked omission expt [96 trials between breaks]) due to summary fb manipulation
     
-    singlePerBlock = [0, 6];   % number of single distractor trials per block in each phase
-    absentPerBlock = [0, 0];    % number of distractor absent trials per block in each phase
+    singlePerBlock = [0, 12];   % number of single distractor trials per block in each phase. 12 per distractor = 24 trials total
+    absentPerBlock = [0, 0];    % number of distractor absent trials per block in each phase. No absent trials in this expt
     %doublePerBlock = [0, 4, 11];
     
 else
