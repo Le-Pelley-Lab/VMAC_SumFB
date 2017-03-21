@@ -35,6 +35,7 @@ global omissionInformedVersion
 global couldHaveWonVersion
 global laptopVersion viewDistance monitorDims
 global sumFBcondition EGdataFilenameBase
+global pointsDenominator
 
 eyeVersion = true; % set to true to run eyetracker, otherwise uses mouse position
 realVersion = true; % set to true for correct numbers of trials etc.
@@ -44,6 +45,10 @@ omissionInformedVersion = true; % set to true to inform participants about the o
 couldHaveWonVersion = true; % set to true to tell participants what they could have won on omission/timeout trials.
 maxDollaridoos = 17.5;    %this is the maximum amount that someone can win with perfect performance (in dollars)
 minDollaridoos = 7.1;   %this is the minimum amount that someone can win with perfect performance (in dollars)
+pointsDenominator = findPointsDenominator(maxDollaridoos);  % this function finds the denominator needed to convert points to dollars under the requirements given above
+
+
+
 
 commandwindow;
 
@@ -324,12 +329,12 @@ pressSpaceToBegin;
 awareInstructions;
 awareTest;
 
-pointsDenominator = findPointsDenominator(maxDollaridoos);
+sessionBonus = points2Dollars(sessionPoints)
 
-sessionBonus = sessionPoints / pointsDenominator;   % convert points into cents at rate of 13 000 points = $1. Updated 13/5.
+% sessionBonus = sessionPoints / pointsDenominator;   % convert points into cents at rate of 13 000 points = $1. Updated 13/5.
 
-sessionBonus = 10 * ceil(sessionBonus/10);        % ... round this value UP to nearest 10 cents
-sessionBonus = sessionBonus / 100;    % ... then convert back to dollars
+% sessionBonus = 10 * ceil(sessionBonus/10);        % ... round this value UP to nearest 10 cents
+% sessionBonus = sessionBonus / 100;    % ... then convert back to dollars
 
 if sessionBonus < minDollaridoos
     sessionBonus = minDollaridoos;

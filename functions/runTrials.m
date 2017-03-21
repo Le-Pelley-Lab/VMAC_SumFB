@@ -835,20 +835,20 @@ if runCalib == 0
 %             '\n\nYour new total score = ', separatethousands(afterTotal, ','), ' points'];
 
         sumFBstr = ['In the last block you earned = \nYou looked at the coloured circle ',  num2str(omCounter), ' times = ',...
-            extraStr, '\n\nYour new total score = '];
+            extraStr, '\n\nYour new total score = ', '\nThat is equivalent to '];
         
         sumFBvals = [separatethousands(pointsInBlock, ','), '\n',...
             separatethousands(omTotal, ','), extraVal, ...
-            '\n', sumFBunderline, '\n', separatethousands(afterTotal, ',')];
+            '\n', sumFBunderline, '\n', separatethousands(afterTotal, ','), '\n', ['$' num2str(points2Dollars(afterTotal), '%0.2f')]];
     else
         afterTotal = totalPointsSoFar;
         combinedVals = [totalPointsSoFar, omTotal, toTotal, afterTotal, prevBlockTotal];
         sumFBunderline = char(ones(1,ceil(log10(max(combinedVals))))*95); % this makes a string of underscores the same size as the largest number
         
         sumFBstr = ['In the last block you earned = ', extraStr...
-            '\n\nYour total score = '];
+            '\n\nYour total score = ', '\nThat is equivalent to '];
         sumFBvals = [separatethousands(pointsInBlock, ','), extraVal ...
-            '\n', sumFBunderline, '\n', separatethousands(afterTotal, ',')];
+            '\n', sumFBunderline, '\n', separatethousands(afterTotal, ','), '\n', ['$' num2str(points2Dollars(afterTotal), '%0.2f')]];
     end
     
     sumFBstr = [sumFBstr, '\n\nYou will be able to continue in ', num2str(breakDur), ' seconds'];
