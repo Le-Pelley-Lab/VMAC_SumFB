@@ -35,7 +35,7 @@ global omissionInformedVersion
 global couldHaveWonVersion
 global laptopVersion viewDistance monitorDims
 global sumFBcondition EGdataFilenameBase
-global pointsDenominator
+global maxDollaridoos minDollaridoos
 
 eyeVersion = true; % set to true to run eyetracker, otherwise uses mouse position
 realVersion = true; % set to true for correct numbers of trials etc.
@@ -45,7 +45,6 @@ omissionInformedVersion = true; % set to true to inform participants about the o
 couldHaveWonVersion = true; % set to true to tell participants what they could have won on omission/timeout trials.
 maxDollaridoos = 17.5;    %this is the maximum amount that someone can win with perfect performance (in dollars)
 minDollaridoos = 7.1;   %this is the minimum amount that someone can win with perfect performance (in dollars)
-pointsDenominator = findPointsDenominator(maxDollaridoos);  % this function finds the denominator needed to convert points to dollars under the requirements given above
 
 
 
@@ -59,7 +58,7 @@ if realVersion
     awareInstrPause = 12;
 else
     screens = Screen('Screens');
-    screenNum = 2; %max(screens);
+    screenNum = max(screens);
     Screen('Preference', 'SkipSyncTests', 2); %Skips PTB calibrations
     fprintf('\n\nEXPERIMENT IS BEING RUN IN DEBUGGING MODE!!! IF YOU ARE RUNNING A ''REAL'' EXPT, QUIT AND CHANGE realVersion TO true\n\n');
     awareInstrPause = 1;

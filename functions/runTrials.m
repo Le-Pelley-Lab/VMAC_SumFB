@@ -13,7 +13,8 @@ global awareInstrPause
 global starting_total_points
 global realVersion eyeVersion
 global omissionInformedVersion couldHaveWonVersion
-global maxPoints sumFBcondition prevBlockTotal softTimeoutDuration EGdataFilenameBase
+global maxPoints sumFBcondition prevBlockTotal softTimeoutDuration EGdataFilenameBase pointsDenominator
+global maxDollaridoos
 
  gamma = 0.2;    % Controls smoothing of displayed gaze location. Lower values give more smoothing
 
@@ -41,7 +42,7 @@ if realVersion
     fixationFixationTime = 0.7;       % Time that fixation cross must be fixated for trial to begin
     
     pracTrials = 8;
-    numExptBlocksPhase = [1, 18]; %Phase 1 = practice, Phase 2 = main task. 18 Blocks = 432 trials total (216 per distractor type [no absent trials])
+    numExptBlocksPhase = [1, 20]; %Phase 1 = practice, Phase 2 = main task. 20 Blocks = 480 trials total (240 per distractor type [no absent trials])
     
     blocksPerBreak = 2; % Breaks occur every 48 trials, more frequent (than yoked omission expt [96 trials between breaks]) due to summary fb manipulation
     
@@ -69,7 +70,7 @@ else
     fixationFixationTime = 0.005;
     
     pracTrials = 2;
-    numExptBlocksPhase = [1, 1];
+    numExptBlocksPhase = [1, 2];
     
     blocksPerBreak = 1;
     
@@ -142,6 +143,9 @@ if exptPhase > 1
     maxPointsPerBlock = sum(numSingleDistractPerBlock * winMultiplier(1:numSingleDistractType)) + numAbsentDistractPerBlock * winMultiplier(numSingleDistractType + 1);
 
     maxPoints = maxPointsPerBlock * sum(numExptBlocksPhase(2:end));
+    
+    pointsDenominator = findPointsDenominator(maxDollaridoos);  % this function finds the denominator needed to convert points to dollars under the requirements given above
+
     
 end
 
